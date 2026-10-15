@@ -72,6 +72,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Check Docker Hub secrets
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          test -n "$DOCKERHUB_USERNAME" || { echo "DOCKERHUB_USERNAME is missing"; exit 1; }
+          test -n "$DOCKERHUB_TOKEN" || { echo "DOCKERHUB_TOKEN is missing"; exit 1; }
+          echo "Both Docker Hub secrets are present."
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
