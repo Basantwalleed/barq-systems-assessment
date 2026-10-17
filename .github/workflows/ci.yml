@@ -95,3 +95,9 @@ jobs:
           tags: |
             basanttt/barq-app:${{ github.sha }}
             basanttt/barq-app:latest
+      - name: Deploy application to Kubernetes
+        run: |
+          kubectl set image deployment/app-01 app=basanttt/barq-app:${GITHUB_SHA}
+          kubectl rollout status deployment/app-01 --timeout=180s
+          kubectl get deployment app-01 -o wide
+          kubectl get pods -l app=app-01 -o wide

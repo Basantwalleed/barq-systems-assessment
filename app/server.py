@@ -91,7 +91,7 @@ def create_app(config=None, dependencies=None):
 
     @app.get("/")
     def index():
-        return response({"message": app.config["APP_MESSAGE"]})
+        return response({"message": app.config["APP_MESSAGE"], "release": "k8s-cicd-bonus-v1"})
 
     @app.get("/health")
     def health():
