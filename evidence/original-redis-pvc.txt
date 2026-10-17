@@ -1,0 +1,4 @@
+NAME         STATUS   VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE    VOLUMEMODE
+redis-data   Bound    redis-pv   1Gi        RWO                           <unset>                 106m   Filesystem
+NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+redis-pv   1Gi        RWO            Retain           Bound    barq/redis-data                  <unset>                          106m

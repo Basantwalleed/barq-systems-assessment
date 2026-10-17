@@ -107,3 +107,15 @@ variable "db_final_snapshot_identifier" {
   type        = string
   default     = "aws-kubernetes-project-postgres-final"
 }
+
+
+variable "elasticache_auth_token" {
+  description = "Private authentication token for the managed cache"
+  type        = string
+  sensitive   = true
+  nullable    = false
+  validation {
+    condition     = length(var.elasticache_auth_token) >= 16 && length(var.elasticache_auth_token) <= 128
+    error_message = "The cache authentication token must be 16 to 128 characters."
+  }
+}

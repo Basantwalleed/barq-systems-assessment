@@ -4,6 +4,10 @@ resource "aws_security_group" "control_plane" {
   description = "Security group for the Kubernetes control-plane node"
   vpc_id      = aws_vpc.main.id
 
+  lifecycle {
+    ignore_changes = [ingress]
+  }
+
   ingress {
     description = "SSH from approved administrator IP"
     from_port   = 22
@@ -30,6 +34,10 @@ resource "aws_security_group" "worker" {
   name        = "${var.project_name}-worker-sg"
   description = "Security group for the Kubernetes worker node"
   vpc_id      = aws_vpc.main.id
+
+  lifecycle {
+    ignore_changes = [ingress]
+  }
 
   ingress {
     description = "SSH from approved administrator IP"
@@ -82,14 +90,6 @@ resource "aws_vpc_security_group_ingress_rule" "api_from_worker" {
 }
 
 # Kubelet API: control plane to worker
-resource "aws_vpc_security_group_ingress_rule" "kubelet_from_control_plane" {
-  security_group_id            = aws_security_group.worker.id
-  referenced_security_group_id = aws_security_group.control_plane.id
-  description                  = "Kubelet API from control plane"
-  ip_protocol                  = "tcp"
-  from_port                    = 10250
-  to_port                      = 10250
-}
 
 # PostgreSQL: permit access from the Kubernetes nodes
 resource "aws_vpc_security_group_ingress_rule" "postgres_from_worker" {
@@ -111,14 +111,6 @@ resource "aws_vpc_security_group_ingress_rule" "calico_vxlan_control_plane" {
 }
 
 # Calico VXLAN traffic: worker to control plane
-resource "aws_vpc_security_group_ingress_rule" "calico_vxlan_worker" {
-  security_group_id            = aws_security_group.worker.id
-  referenced_security_group_id = aws_security_group.control_plane.id
-  description                  = "Calico VXLAN from control plane"
-  ip_protocol                  = "udp"
-  from_port                    = 4789
-  to_port                      = 4789
-}
 
 # Kubernetes API access: administrator to control plane
 resource "aws_vpc_security_group_ingress_rule" "api_from_admin" {
@@ -129,3 +121,15 @@ resource "aws_vpc_security_group_ingress_rule" "api_from_admin" {
   from_port         = 6443
   to_port           = 6443
 }
+
+# PostgreSQL: preserve existing control-plane access
+resource "aws_vpc_security_group_ingress_rule" "postgres_from_control_plane" {
+  security_group_id            = aws_security_group.database.id
+  referenced_security_group_id = aws_security_group.control_plane.id
+  description                  = "PostgreSQL from control-plane node"
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+}
+
+# Preserve existing NodePort access from the approved administrator IP

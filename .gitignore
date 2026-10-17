@@ -34,3 +34,14 @@ crash.*.log
 
 # Ansible local inventory with real server addresses
 ansible/inventory.ini
+
+# Terraform private state, plans, and variables
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+terraform.tfvars
+terraform.tfvars.json
+
+# Local ElastiCache authentication token
+.cache/

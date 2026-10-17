@@ -1,0 +1,5 @@
+=== Counter before Flask restart ===
+{"counter":3,"instance_id":"flask-6666859bcd-zmcd5","service":"barq-api","version":"2.0.0"}
+
+=== Restart Flask deployment ===
+Warning: Identity file /home/ec2-user/.ssh/aws-kubernetes-project not accessible: No such file or directory.
