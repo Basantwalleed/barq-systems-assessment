@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: barq-db-init
+  namespace: barq
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS records (
+      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      title varchar(200) NOT NULL CHECK (length(trim(title)) > 0)
+    );
+
+    INSERT INTO records (title)
+    SELECT 'Review service readiness'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM records WHERE title = 'Review service readiness'
+    );
+
+    INSERT INTO records (title)
+    SELECT 'Document the operating procedure'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM records WHERE title = 'Document the operating procedure'
+    );
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: barq-db-init
+  namespace: barq
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 180
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: psql
+          image: postgres:16-alpine
+          command: ["sh", "-c"]
+          args:
+            - 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /schema/init.sql'
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: barq-db
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+      volumes:
+        - name: schema
+          configMap:
+            name: barq-db-init

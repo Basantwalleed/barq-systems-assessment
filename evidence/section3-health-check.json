@@ -1,0 +1,2 @@
+control-plane | CHANGED | rc=0 >>
+{"instance_id":"flask-7fd766d9c6-pwjqx","service":"barq-api","status":"alive","version":"2.0.0"}

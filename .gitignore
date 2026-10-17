@@ -13,3 +13,24 @@ backups/
 
 # Local application secrets
 config/app.env
+
+# Kubernetes/AWS project: Terraform working files and state
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Terraform secrets and local variable files
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# AWS credentials and private keys
+.aws/
+*.pem
+*.key
+
+# Ansible local inventory with real server addresses
+ansible/inventory.ini

@@ -1,0 +1,89 @@
+---
+- name: Initialize control plane and install Calico
+  hosts: control_plane
+  become: true
+
+  tasks:
+    - name: Check whether the control plane is already initialized
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: cluster_initialized
+
+    - name: Initialize Kubernetes control plane
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - init
+          - --apiserver-advertise-address={{ ansible_default_ipv4.address }}
+          - --apiserver-cert-extra-sans={{ ansible_host }}
+          - --pod-network-cidr=192.168.0.0/16
+      when: not cluster_initialized.stat.exists
+
+    - name: Download Calico manifest
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/calico.yaml
+        dest: /tmp/calico.yaml
+        mode: "0644"
+    - name: Configure Calico to use VXLAN without BGP
+      ansible.builtin.replace:
+        path: /tmp/calico.yaml
+        regexp: '(?m)^(\s*-\s*name: CALICO_IPV4POOL_IPIP\s*\n\s*value: ).*$'
+        replace: '\1"Never"'
+
+    - name: Enable Calico VXLAN pool
+      ansible.builtin.replace:
+        path: /tmp/calico.yaml
+        regexp: '(?m)^(\s*-\s*name: CALICO_IPV4POOL_VXLAN\s*\n\s*value: ).*$'
+        replace: '\1"Always"'
+
+    - name: Configure Calico networking backend for VXLAN
+      ansible.builtin.replace:
+        path: /tmp/calico.yaml
+        regexp: '(?m)^(\s*calico_backend:\s*).*$'
+        replace: '\1vxlan'
+
+    - name: Disable BGP for VXLAN-only Calico
+      ansible.builtin.replace:
+        path: /tmp/calico.yaml
+        regexp: '(?m)^(\s*-\s*name: CLUSTER_TYPE\s*\n\s*value: ).*$'
+        replace: '\1"k8s"'
+
+    - name: Remove BIRD checks from Calico health probes
+      ansible.builtin.replace:
+        path: /tmp/calico.yaml
+        regexp: '(?m)^\s+- --bird-(?:ready|live)\n'
+        replace: ''
+
+    - name: Apply Calico networking
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig=/etc/kubernetes/admin.conf
+          - apply
+          - -f
+          - /tmp/calico.yaml
+      changed_when: true
+
+    - name: Generate worker join command
+      ansible.builtin.command: kubeadm token create --print-join-command
+      register: generated_join_command
+      changed_when: false
+
+    - name: Share join command with worker play
+      ansible.builtin.set_fact:
+        kubeadm_join_command: "{{ generated_join_command.stdout }}"
+
+- name: Join worker to Kubernetes cluster
+  hosts: workers
+  become: true
+
+  tasks:
+    - name: Check whether worker is already joined
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: worker_joined
+
+    - name: Join worker to control plane
+      ansible.builtin.command:
+        argv: "{{ hostvars[groups['control_plane'][0]].kubeadm_join_command.split() }}"
+      when: not worker_joined.stat.exists

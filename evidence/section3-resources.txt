@@ -1,0 +1,13 @@
+control-plane | CHANGED | rc=0 >>
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                     SELECTOR
+deployment.apps/flask   2/2     2            2           5m46s   flask        basanttt/barq-app:latest   app=flask
+deployment.apps/nginx   1/1     1            1           5m46s   nginx        nginx:1.28-alpine          app=nginx
+deployment.apps/redis   1/1     1            1           5m46s   redis        redis:7.4-alpine           app=redis
+
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+service/flask   ClusterIP   10.99.231.183   <none>        8080/TCP       5m46s   app=flask
+service/nginx   NodePort    10.99.215.0     <none>        80:30080/TCP   5m46s   app=nginx
+service/redis   ClusterIP   10.104.47.5     <none>        6379/TCP       5m46s   app=redis
+
+NAME                               STATUS   VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE     VOLUMEMODE
+persistentvolumeclaim/redis-data   Bound    redis-pv   1Gi        RWO                           <unset>                 5m46s   Filesystem
